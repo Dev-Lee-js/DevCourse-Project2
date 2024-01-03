@@ -48,13 +48,18 @@ router.post(
 )
 
 //로그인
-router.post('/login', ctrl.login);
+router.post(
+    '/login',
+    [
+        body("email").notEmpty().isEmail().withMessage("이메일 확인 필요"),
+        body("password").notEmpty().isString().withMessage("비밀번호 확인 필요"),
+        validate
+    ],
+    ctrl.login);
 
 router
     .route("/reset")
-    .post(ctrl.reset) // 비밀번호 초기화 요청
-    .put((req, res) => {
-        res.json("비밀번호 초기화")
-    });
+    .post(ctrl.resetReq) // 비밀번호 초기화 요청
+    .put(ctrl.reset); // 비밀번호 초기화
 
 module.exports = router
