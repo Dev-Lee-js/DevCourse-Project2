@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { body, param, validationResult } = require("express-validator")
+const { StatusCodes } = require("http-status-codes")
 const bcrypt = require('bcrypt');
-const ctrl = require("./users.ctrl")
+const ctrl = require("./controller")
 
 router.use(express.json());
 
@@ -59,7 +60,18 @@ router.post(
 
 router
     .route("/reset")
-    .post(ctrl.resetReq) // 비밀번호 초기화 요청
-    .put(ctrl.reset); // 비밀번호 초기화
+    .post(
+        [
+            body("email").notEmpty().isEmail().withMessage("이메일 확인 필요"),
+            validate
+        ],
+        ctrl.resetReq)
+    .put(
+        [
+            body("email").notEmpty().isEmail().withMessage("이메일 확인 필요"),
+            body("password").notEmpty().isString().withMessage("비밀번호 확인 필요"),            
+            validate
+        ],
+        ctrl.reset);
 
 module.exports = router
