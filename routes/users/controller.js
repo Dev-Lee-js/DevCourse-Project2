@@ -6,7 +6,7 @@ dotenv.config();
 
 const join = (req, res) => {
 
-    let { email, password } = req.body
+    const { email, password } = req.body
 
     const sql = `INSERT INTO users (email, password) VALUES (?, ?)`
     const values = [email, password]
@@ -24,13 +24,13 @@ const join = (req, res) => {
 const login = (req, res) => {
     const { email, password } = req.body
 
-    let sql = `SELECT * FROM users WHERE email = ?`
+    const sql = `SELECT * FROM users WHERE email = ?`
     conn.query(sql, email,
         (err, results) => {
             if (err) {
                 return res.status(StatusCodes.BAD_REQUEST).end()
             }
-            let loginUser = results[0]
+            const loginUser = results[0]
             if (loginUser && loginUser.password == password) {
                 const token = jwt.sign({
                     email: loginUser.email,
@@ -56,13 +56,13 @@ const login = (req, res) => {
 }
 
 const resetReq = (req, res) => {
-    const { email } = req.body    
+    const { email } = req.body
     let sql = `SELECT * FROM users WHERE email = ?`
     conn.query(sql, email,
-        (err, results) => {                
-            if (results.length) {                
+        (err, results) => {
+            if (results.length) {
                 res.status(StatusCodes.OK).json({
-                    message : "인증 성공"
+                    message: "인증 성공"
                 })
             } else {
                 res.status(StatusCodes.UNAUTHORIZED).json({
@@ -74,8 +74,23 @@ const resetReq = (req, res) => {
 }
 
 const reset = (req, res) => {
-    const password = req.body
-    res.json("비밀번호 초기화")
+    const { email, password } = req.body
+
+    const sql = `UPDATE users SET password = ? WhERE email = ?`
+    const values = [password, email]
+
+    conn.query(sql, values, (err, results) => {
+        if (err) {
+            return res.status(StatusCodes.BAD_REQUEST).end()
+        }
+        if (results.affectedRows == 0) {
+            return res.status(StatusCodes.BAD_REQUEST).end()
+        } else {
+            res.status(200).json({
+                message : "비밀번호 변경 성공"
+            })
+        }
+    })
 }
 
 module.exports = {

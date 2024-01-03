@@ -69,7 +69,7 @@ router
     .put(
         [
             body("email").notEmpty().isEmail().withMessage("이메일 확인 필요"),
-            body("password").notEmpty().isString().withMessage("비밀번호 확인 필요"),            
+            body("password").notEmpty().isString().withMessage("비밀번호 확인 필요"),
             validate
         ],
         ctrl.reset);
