@@ -1,13 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const conn = require("../mariadb.js")
-const {StatusCodes} = require("http-status-codes")
 const { body, param, validationResult } = require("express-validator")
 const bcrypt = require('bcrypt');
-const saltRounds = 10;
+const ctrl = require("./users.ctrl")
 
 router.use(express.json());
-
 
 const validate = (req, res, next) => {
     const err = validationResult(req)
@@ -21,17 +18,18 @@ const validate = (req, res, next) => {
 }
 
 const encrypt = (req, res, next) => {
+    const saltRounds = 10;
     bcrypt.genSalt(saltRounds, (err, salt) => {
         if (err) {
             return next(err)
         } else {
             bcrypt.hash(req.body.password, salt, (err, hash) => {
-                if (err){
+                if (err) {
                     return next(err)
                 } else {
                     req.body.password = hash
                     next()
-                }   
+                }
             });
         }
     });
@@ -46,34 +44,17 @@ router.post(
         validate,
         encrypt
     ],
-    (req, res) => {
-
-        let { email, password } = req.body
-
-        const sql = `INSERT INTO users (email, password) VALUES (?, ?)`
-        const values = [email, password]
-
-        conn.query(sql, values, (err, results) => {
-            if (err) {
-                return res.status(StatusCodes.BAD_REQUEST).json(err)
-            } else {
-
-                res.status(StatusCodes.CREATED).json(results)
-            }
-        })
-    })
+    ctrl.join
+)
 
 //로그인
-router.post('/login', (req, res) => {
-    res.json("로그인")
-});
-//비밀번호 초기화 요청
-router.post('/reset', (req, res) => {
-    res.json("비밀번호 초기화 요청")
-});
-//비밀번호 초기화 
-router.put('/reset', (req, res) => {
-    res.json("비밀번호 초기화")
-});
+router.post('/login', ctrl.login);
+
+router
+    .route("/reset")
+    .post(ctrl.reset) // 비밀번호 초기화 요청
+    .put((req, res) => {
+        res.json("비밀번호 초기화")
+    });
 
 module.exports = router
