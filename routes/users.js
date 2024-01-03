@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const conn = require("../mariadb.js")
+const {StatusCodes} = require("http-status-codes")
 const { body, param, validationResult } = require("express-validator")
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
@@ -15,7 +16,7 @@ const validate = (req, res, next) => {
 
         return next()
     } else {
-        return res.status(400).json(err.array())
+        return res.status(StatusCodes.BAD_REQUEST).json(err.array())
     }
 }
 
@@ -54,10 +55,10 @@ router.post(
 
         conn.query(sql, values, (err, results) => {
             if (err) {
-                return res.status(400).json(err)
+                return res.status(StatusCodes.BAD_REQUEST).json(err)
             } else {
 
-                res.status(201).json(results)
+                res.status(StatusCodes.CREATED).json(results)
             }
         })
     })
