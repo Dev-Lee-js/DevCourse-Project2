@@ -1,41 +1,74 @@
 const conn = require("../../mariadb.js")
 const { StatusCodes } = require("http-status-codes")
-const nodemailer = require('nodemailer'); 
+const nodemailer = require('nodemailer');
 const jwt = require("jsonwebtoken")
+const bcrypt = require("bcrypt")
 const dotenv = require('dotenv');
 dotenv.config();
 
+const encrypt = (userPassword) => {
+
+    const saltRounds = 10;
+
+    return new Promise((resolve, reject) => {
+        bcrypt.genSalt(saltRounds, (err, salt) => {
+            if (err) {
+                reject(err);
+            } else {
+                bcrypt.hash(userPassword, salt, (err, hash) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(hash);
+                    }
+                });
+            }
+        });
+    });
+};
+
+const decrypt = (userPassword, hash) => {
+
+    return new Promise((resolve, reject) => {
+        bcrypt.compare(userPassword, hash, (err, result) => {
+            if (result) {
+                resolve(result);
+            } else {
+                reject(err);
+            }
+        });
+    });
+};
 
 const generateRandomCode = () => {
     return Math.floor(100000 + Math.random() * 900000)
 }
 
 const sendMail = (userEmail) => {
-    authNmbr = generateRandomCode(); 
-    console.log(userEmail, authNmbr);
 
+    authNmbr = generateRandomCode();
 
-    let transporter = nodemailer.createTransport({
-        service: 'Naver',   
+    const transporter = nodemailer.createTransport({
+        service: 'Naver',
         prot: 587,
         host: 'smtp.naver.com',
         auth: {
-            user: process.env.NODEMAILER_USER,  
-            pass: process.env.NODEMAILER_PASS  
+            user: process.env.NODEMAILER_USER,
+            pass: process.env.NODEMAILER_PASS
         }
     });
 
-    let mailOptions = {
+    const mailOptions = {
         from: `"이종석" <${process.env.NODEMAILER_USER}>`,
-        to: userEmail, 
-        subject: "인증번호를 입력해주세요.", 
+        to: userEmail,
+        subject: "인증번호를 입력해주세요.",
         html: `<h1>이메일 인증</h1>
             <div>
             인증번호 [${authNmbr}]를 인증 창에 입력하세요.    
             </div>`,
     };
 
-    transporter.sendMail(mailOptions, function (error, info) {
+    transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
             console.log(error);
         } else {
@@ -45,60 +78,82 @@ const sendMail = (userEmail) => {
     })
 }
 
-const join = (req, res) => {
+const join = async (req, res) => {
 
-    const { email, password } = req.body
+    const { email, password } = req.body;
 
-    const sql = `INSERT INTO users (email, password) VALUES (?, ?)`
-    const values = [email, password]
+    const hashedPassword = await encrypt(password);
+
+    const sql = `INSERT INTO users (email, password) VALUES (?, ?)`;
+    const values = [email, hashedPassword];
 
     conn.query(sql, values, (err, results) => {
         if (err) {
-            return res.status(StatusCodes.BAD_REQUEST).json(err)
+            return res.status(StatusCodes.BAD_REQUEST).json(err);
         } else {
-
-            res.status(StatusCodes.CREATED).json(results)
+            res.status(StatusCodes.CREATED).json(results);
         }
-    })
-}
+    });
+
+};
 
 const login = (req, res) => {
-    const { email, password } = req.body
 
-    const sql = `SELECT * FROM users WHERE email = ?`
-    conn.query(sql, email,
-        (err, results) => {
-            if (err) {
-                return res.status(StatusCodes.BAD_REQUEST).end()
-            }
-            const loginUser = results[0]
-            if (loginUser && loginUser.password == password) {
-                const token = jwt.sign({
-                    email: loginUser.email,
-                }, process.env.PRIVATE_KEY, {
-                    expiresIn: "5m",
-                    issuer: "jongseok"
-                })
+    const { email, password } = req.body;
 
+    const sql = `SELECT * FROM users WHERE email = ?`;
+
+    conn.query(sql, email, async (err, results) => {
+        
+        if (err) {
+            return res.status(StatusCodes.BAD_REQUEST).end();
+        }
+
+        const loginUser = results[0];
+
+        if (loginUser) {
+
+            const hashedPassword = loginUser.password; 
+            const passwordMatch = await decrypt(password, hashedPassword);
+
+            if (passwordMatch) {                
+                const token = jwt.sign(
+                    {
+                        email: loginUser.email,
+                    },
+                    process.env.PRIVATE_KEY,
+                    {
+                        expiresIn: "5m",
+                        issuer: "jongseok",
+                    }
+                )
                 res.cookie("token", token, {
-                    httpOnly: true
-                })
+                    httpOnly: true,
+                });
 
                 res.status(StatusCodes.OK).json({
-                    token: token
+                    message : "로그인 완료",
                 })
-            } else {
+            } else {                
                 res.status(StatusCodes.UNAUTHORIZED).json({
-                    message: `이메일 또는 비빌번호가 틀렸습니다.`
-                })
+                    message: `이메일 또는 비밀번호가 틀렸습니다.`,
+                });
             }
+        } else {            
+            res.status(StatusCodes.UNAUTHORIZED).json({
+                message: `이메일 또는 비밀번호가 틀렸습니다.`,
+            });
         }
-    )
-}
+    });
+
+};
 
 const resetReq = (req, res) => {
+
     const { email } = req.body
+
     let sql = `SELECT * FROM users WHERE email = ?`
+
     conn.query(sql, email,
         (err, results) => {
             if (results.length) {
@@ -115,11 +170,14 @@ const resetReq = (req, res) => {
     )
 }
 
-const reset = (req, res) => {
+const reset = async (req, res) => {
+
     const { email, password } = req.body
 
+    const hashedPassword = await encrypt(password);
+
     const sql = `UPDATE users SET password = ? WhERE email = ?`
-    const values = [password, email]
+    const values = [hashedPassword, email]
 
     conn.query(sql, values, (err, results) => {
         if (err) {
