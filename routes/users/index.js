@@ -36,6 +36,20 @@ const encrypt = (req, res, next) => {
     });
 }
 
+const decrypt = (req, res, next) => {
+    bcrypt.compare(myPlaintextPassword, hash, function(err, result) {   
+        if(result) {
+            console.log("비밀번호 맞음")
+        }
+        else{
+            console.log("비밀번호 틀림")
+        }
+    });
+}
+
+
+
+
 //회원가입
 router.post(
     '/join',
@@ -54,7 +68,8 @@ router.post(
     [
         body("email").notEmpty().isEmail().withMessage("이메일 확인 필요"),
         body("password").notEmpty().isString().withMessage("비밀번호 확인 필요"),
-        validate
+        validate,
+        decrypt
     ],
     ctrl.login);
 
