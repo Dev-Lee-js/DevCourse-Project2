@@ -39,7 +39,7 @@ const bookDetail = (req, res) => {
 
 const bookByCategory = (req, res) => {   
 
-    const {category_id} = req.query;
+    const {category_id} = req.query;    
 
     const sql = `SELECT * FROM books WHERE category_id=?`;    
     
