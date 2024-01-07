@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 
-const allBooks = (req, res) => {
+const allBooks = (req, res) => {    
 
     const sql = `SELECT * FROM books`;
 
@@ -40,11 +40,23 @@ const bookDetail = (req, res) => {
 
 const bookByCategory = (req, res) => {
 
-    const { category_id } = req.query;
+    const { category_id, news, limit, currentPage } = req.query;
 
-    const sql = `SELECT * FROM books WHERE category_id=?`;
+    const offset = limit * (currentPage-1);
+    let sql = `SELECT * FROM books`;
+    let values = [parseInt(limit), offset]
+    if (category_id && news) {
+        sql += ` WHERE category_id=? AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()`;
+        values = values.push(category_id, news);
+    } else if (category_id) {
+        sql += ` WHERE category_id=?`;
+        values = values.push(category_id);
+    } else if (news) {
+        sql += ` WHERE pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()`;
+        values = values.push(news);
+    }
 
-    conn.query(sql, category_id, (err, results) => {
+    conn.query(sql, values, (err, results) => {
         if (err) {
             return res.status(StatusCodes.BAD_REQUEST).end();
         }
