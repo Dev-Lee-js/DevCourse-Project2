@@ -1,8 +1,5 @@
 const conn = require("../../mariadb.js")
 const { StatusCodes } = require("http-status-codes")
-const dotenv = require('dotenv');
-dotenv.config();
-
 
 const allCategory  = (req, res) => {
 
