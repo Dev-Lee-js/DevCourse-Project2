@@ -33,3 +33,7 @@ SELECT cartItems.id, book_id, title, summary, quantity, price FROM cartItems LEF
 
 // 장바구니 아이템 삭제
 DELETE FROM cartItems WHERE id = ?;
+
+
+// 장바구니에서 선택한(장바구니 도서 id) 아이템 목록 조회 (=선택한 장바구니 상품 목록 조회) 
+SELECT * FROM cartItems WHERE user_id = ? AND id IN (?, ?);
