@@ -37,7 +37,19 @@ const getCartItems = (req, res) => {
 }
 
 const removeCartItem = (req, res) => {
-    res.json('장바구니 담기')
+
+    const { id } = req.params;    
+
+    const sql = `DELETE FROM cartItems WHERE id = ?`;    
+
+    conn.query(sql, id,
+        (err, results) => {
+            if (err) {
+                return res.status(StatusCodes.BAD_REQUEST).json(err);
+            } else {
+                res.status(StatusCodes.OK).json(results);
+            }
+        });
 }
 
 
