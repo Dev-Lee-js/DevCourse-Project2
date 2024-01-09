@@ -1,11 +1,11 @@
 const conn = require("../../mariadb.js")
 const { StatusCodes } = require("http-status-codes")
 
-const addToCart = (req,res)=>{
-    
+const addToCart = (req, res) => {
+
     const { book_id, quantity, user_id } = req.body;
 
-    const sql = `INSERT INTO cartItems (book_id, quantity, user_id) VALUES (?, ?, ?);`;
+    const sql = `INSERT INTO cartItems (book_id, quantity, user_id) VALUES (?, ?, ?)`;
     const values = [book_id, quantity, user_id];
 
     conn.query(sql, values,
@@ -18,11 +18,16 @@ const addToCart = (req,res)=>{
         });
 }
 
-const getCartItems = (req,res)=>{
-    
-    const sql = `SELECT cartItems.id, book_id, title, summary, quantity, price FROM cartItems LEFT JOIN books ON cartItems.book_id = books.id;`;
+const getCartItems = (req, res) => {
 
-    conn.query(sql, (err, results) => {
+    const { user_id } = req.body;
+
+    const sql = `SELECT cartItems.id, book_id, title, summary, quantity, price
+                 FROM cartItems LEFT JOIN books 
+                 ON cartItems.book_id = books.id
+                 WHERE user_id = ?`;
+
+    conn.query(sql, user_id, (err, results) => {
         if (err) {
             return res.status(StatusCodes.BAD_REQUEST).json(err);
         } else {
@@ -31,7 +36,7 @@ const getCartItems = (req,res)=>{
     });
 }
 
-const removeCartItem = (req,res)=>{
+const removeCartItem = (req, res) => {
     res.json('장바구니 담기')
 }
 
