@@ -8,12 +8,7 @@ JOIN category ON books.category_id = category.id;
 
 SELECT * FROM books LEFT JOIN category ON books.category_id = category.id WHERE books.id=1;
 
-INSERT INTO likes (user_id, liked_book_id)
-VALUES (1, 1);
-
-DELETE FROM likes
-WHERE user_id = 1 AND liked_book_id = 3;
-
+// 좋아요 추가
 INSERT INTO likes (user_id, liked_book_id) VALUES (1, 1);
 INSERT INTO likes (user_id, liked_book_id) VALUES (1, 2);
 INSERT INTO likes (user_id, liked_book_id) VALUES (1, 3);
@@ -22,5 +17,15 @@ INSERT INTO likes (user_id, liked_book_id) VALUES (4, 4);
 INSERT INTO likes (user_id, liked_book_id) VALUES (2, 1);
 INSERT INTO likes (user_id, liked_book_id) VALUES (2, 2);
 INSERT INTO likes (user_id, liked_book_id) VALUES (2, 3);
-INSERT INTO likes (user_id, liked_book_id) VALUES (2, 5);
+INSERT INTO likes (user_id, liked_book_id) VALUES (2, 5); 
 
+
+// 좋아요 삭제
+DELETE FROM likes WHERE user_id = 1 AND liked_book_id = 3;
+
+// 장바구니 담기
+INSERT INTO cartItems (book_id, quantity, user_id) VALUES (3, 2, 1);
+
+
+// 장바구니 조회
+SELECT cartItems.id, book_id, title, summary, quantity, price FROM cartItems LEFT JOIN books ON cartItems.book_id = books.id;

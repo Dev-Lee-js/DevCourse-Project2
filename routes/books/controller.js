@@ -21,8 +21,8 @@ const bookDetail = (req, res) => {
     const { book_id } = req.params.id;
 
     const sql = `SELECT *,
-                        (SELECT count(*) FROM likes WHERE liked_book_id=books.id) AS likes,
-                        (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? AND liked_book_id = ?)) AS liked
+                    (SELECT count(*) FROM likes WHERE liked_book_id=books.id) AS likes,
+                    (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? AND liked_book_id = ?)) AS liked
                     FROM books
                     LEFT JOIN category
                     ON books.category_id = category.category_id
@@ -46,7 +46,7 @@ const bookByCategory = (req, res) => {
     const { category_id, news, limit, currentPage } = req.query;
 
     const offset = limit * (currentPage-1);
-    let sql = `SELECT *, (SELECT coun(*) FROM likes HWERE books.id=liked_book_id) AS likes FROM books`;
+    let sql = `SELECT *, (SELECT count(*) FROM likes WHERE books.id=liked_book_id) AS likes FROM books`;
     let values = []
     if (category_id && news) {
         sql += ` WHERE category_id=? AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()`;
