@@ -3,40 +3,54 @@ const { StatusCodes } = require("http-status-codes")
 
 const addLike = (req, res) => {
 
-    const { id } = req.params;
-    const { user_id } = req.body
+    if (req.session.is_logined) {
 
-    const sql = `INSERT INTO likes (user_id, liked_book_id) VALUES (?, ?)`;
-    const values = [user_id, id];
+        const { id } = req.params;
+        const { user_id } = req.body
 
-    conn.query(sql, values,
-        (err, results) => {
-            if (err) {
-                return res.status(StatusCodes.BAD_REQUEST).json(err);
-            } else {
-                res.status(StatusCodes.OK).json(results);
-            }
+        const sql = `INSERT INTO likes (user_id, liked_book_id) VALUES (?, ?)`;
+        const values = [user_id, id];
+
+        conn.query(sql, values,
+            (err, results) => {
+                if (err) {
+                    return res.status(StatusCodes.BAD_REQUEST).json(err);
+                } else {
+                    res.status(StatusCodes.OK).json(results);
+                }
+            });
+
+    } else {
+        res.status(StatusCodes.UNAUTHORIZED).json({
+            message: "세션이 만료되었습니다. 계속하려면 로그인하십시오",
         });
+    }
+
 
 };
 
 const removeLike = (req, res) => {
 
-    const { id } = req.params;
-    const { user_id } = req.body
+    if (req.session.is_logined) {
+        const { id } = req.params;
+        const { user_id } = req.body
 
-    const sql = `DELETE FROM likes WHERE user_id = ? AND liked_book_id = ?`;
-    const values = [user_id, id];
+        const sql = `DELETE FROM likes WHERE user_id = ? AND liked_book_id = ?`;
+        const values = [user_id, id];
 
-    conn.query(sql, values,
-        (err, results) => {
-            if (err) {
-                return res.status(StatusCodes.BAD_REQUEST).json(err);
-            } else {
-                res.status(StatusCodes.OK).json(results);
-            }
+        conn.query(sql, values,
+            (err, results) => {
+                if (err) {
+                    return res.status(StatusCodes.BAD_REQUEST).json(err);
+                } else {
+                    res.status(StatusCodes.OK).json(results);
+                }
+            });
+    } else {
+        res.status(StatusCodes.UNAUTHORIZED).json({
+            message: "세션이 만료되었습니다. 계속하려면 로그인하십시오",
         });
-
+    }
 };
 
 module.exports = {

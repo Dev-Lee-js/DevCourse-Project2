@@ -1,10 +1,7 @@
-const conn = require("../../mariadb.js")
 const { StatusCodes } = require("http-status-codes")
 const nodemailer = require('nodemailer');
-const jwt = require("jsonwebtoken")
 const bcrypt = require("bcrypt")
-const dotenv = require('dotenv');
-dotenv.config();
+const conn = require("../../mariadb.js");
 
 const encrypt = (userPassword) => {
 
@@ -104,7 +101,7 @@ const login = (req, res) => {
     const sql = `SELECT * FROM users WHERE email = ?`;
 
     conn.query(sql, email, async (err, results) => {
-        
+
         if (err) {
             return res.status(StatusCodes.BAD_REQUEST).end();
         }
@@ -113,39 +110,38 @@ const login = (req, res) => {
 
         if (loginUser) {
 
-            const hashedPassword = loginUser.password; 
+            const hashedPassword = loginUser.password;
             const passwordMatch = await decrypt(password, hashedPassword);
 
-            if (passwordMatch) {                
-                const token = jwt.sign(
-                    {
-                        email: loginUser.email,
-                    },
-                    process.env.PRIVATE_KEY,
-                    {
-                        expiresIn: "5m",
-                        issuer: "jongseok",
-                    }
-                )
-                res.cookie("token", token, {
-                    httpOnly: true,
-                });
+            if (passwordMatch) {
+                
+                req.session.email = email;
+                req.session.is_logined = true;
 
                 res.status(StatusCodes.OK).json({
-                    message : "로그인 완료",
+                    message: "로그인 완료",
                 })
-            } else {                
+            } else {
                 res.status(StatusCodes.UNAUTHORIZED).json({
                     message: `이메일 또는 비밀번호가 틀렸습니다.`,
                 });
             }
-        } else {            
+        } else {
             res.status(StatusCodes.UNAUTHORIZED).json({
                 message: `이메일 또는 비밀번호가 틀렸습니다.`,
             });
         }
     });
 
+};
+
+const logout = (req, res) => {
+    req.session.destroy((err) => {
+        res.status(StatusCodes.OK).json({
+            message: "로그아웃 완료",
+        })
+        
+    });    
 };
 
 const resetReq = (req, res) => {
@@ -168,6 +164,7 @@ const resetReq = (req, res) => {
             }
         }
     )
+
 }
 
 const reset = async (req, res) => {
@@ -197,5 +194,6 @@ module.exports = {
     join,
     login,
     resetReq,
-    reset
+    reset,
+    logout
 }

@@ -23,7 +23,7 @@ router.post(
     [
         body("email").notEmpty().isEmail().withMessage("이메일 확인 필요"),
         body("password").notEmpty().isString().withMessage("비밀번호 확인 필요"),
-        validate        
+        validate
     ],
     ctrl.join
 )
@@ -34,9 +34,11 @@ router.post(
     [
         body("email").notEmpty().isEmail().withMessage("이메일 확인 필요"),
         body("password").notEmpty().isString().withMessage("비밀번호 확인 필요"),
-        validate,        
+        validate,
     ],
     ctrl.login);
+
+router.get('/logout', ctrl.logout);
 
 router
     .route("/reset")
