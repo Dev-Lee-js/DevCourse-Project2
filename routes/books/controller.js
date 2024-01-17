@@ -1,4 +1,4 @@
-const conn = require("../../mariadb.js")
+const { connection: conn } = require("../../mariadb.js");
 const { StatusCodes } = require("http-status-codes")
 
 
@@ -19,7 +19,7 @@ const allBooks = (req, res) => {
         sql += " WHERE category_id=?";
         values.push(category_id);
     }
-    
+
     sql += "LIMIT ? OFFSET ?";
     values.push(parseInt(limit), parseInt(offset));
 

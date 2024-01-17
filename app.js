@@ -1,16 +1,12 @@
-require('dotenv').config();
+const dotenv = require('dotenv');
 const express = require('express');
 const app = express();
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
-const options = {
-  host: process.env.DATABASE_HOST,
-  user: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-  database: 'Bookstore',
-  dateStrings: true,
-};
-var sessionStore = new MySQLStore(options);
+const {options} = require("./mariadb");
+const sessionStore = new MySQLStore(options);
+
+dotenv.config();
 
 app.use(
   session({

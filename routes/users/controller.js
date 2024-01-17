@@ -1,7 +1,7 @@
-const { StatusCodes } = require("http-status-codes")
+const { StatusCodes } = require("http-status-codes");
 const nodemailer = require('nodemailer');
-const bcrypt = require("bcrypt")
-const conn = require("../../mariadb.js");
+const bcrypt = require("bcrypt");
+const { connection: conn } = require("../../mariadb.js");
 
 const encrypt = (userPassword) => {
 
@@ -31,14 +31,16 @@ const decrypt = (userPassword, hash) => {
             if (result) {
                 resolve(result);
             } else {
-                reject(err);
+                reject(new Error('Password not found'));
             }
         });
     });
 };
 
 const generateRandomCode = () => {
-    return Math.floor(100000 + Math.random() * 900000)
+
+    return Math.floor(100000 + Math.random() * 900000);
+
 }
 
 const sendMail = (userEmail) => {
@@ -46,6 +48,7 @@ const sendMail = (userEmail) => {
     authNmbr = generateRandomCode();
 
     const transporter = nodemailer.createTransport({
+
         service: 'Naver',
         prot: 587,
         host: 'smtp.naver.com',
@@ -53,9 +56,11 @@ const sendMail = (userEmail) => {
             user: process.env.NODEMAILER_USER,
             pass: process.env.NODEMAILER_PASS
         }
+
     });
 
     const mailOptions = {
+
         from: `"이종석" <${process.env.NODEMAILER_USER}>`,
         to: userEmail,
         subject: "인증번호를 입력해주세요.",
@@ -66,6 +71,7 @@ const sendMail = (userEmail) => {
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
+
         if (error) {
             console.log(error);
         } else {
@@ -79,18 +85,32 @@ const join = async (req, res) => {
 
     const { email, password } = req.body;
 
-    const hashedPassword = await encrypt(password);
+    try {
 
-    const sql = `INSERT INTO users (email, password) VALUES (?, ?)`;
-    const values = [email, hashedPassword];
+        const hashedPassword = await encrypt(password);
+        const sql = `INSERT INTO users (email, password) VALUES (?, ?)`;
+        const values = [email, hashedPassword];
 
-    conn.query(sql, values, (err, results) => {
-        if (err) {
-            return res.status(StatusCodes.BAD_REQUEST).json(err);
-        } else {
-            res.status(StatusCodes.CREATED).json(results);
-        }
-    });
+        conn.query(sql, values, (err, results) => {
+            if (results) {
+                res.status(StatusCodes.CREATED).json({
+                    message: "회원가입이 완료되었습니다."
+                });
+            } else {
+                return res.status(StatusCodes.BAD_REQUEST).json({
+                    message: "회원가입 실패"
+                });
+            }
+        });
+
+    } catch (error) {
+
+        console.log(error);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+            message: '예기치 않은 오류가 발생했습니다.'
+        });
+
+    }
 
 };
 
@@ -102,92 +122,124 @@ const login = (req, res) => {
 
     conn.query(sql, email, async (err, results) => {
 
-        if (err) {
-            return res.status(StatusCodes.BAD_REQUEST).end();
-        }
+        try {
 
-        const loginUser = results[0];
+            const loginUser = results[0];
 
-        if (loginUser) {
+            if (!loginUser) {
+                throw new Error('Email not found');
+            }
 
             const hashedPassword = loginUser.password;
-            const passwordMatch = await decrypt(password, hashedPassword);
-
+            const passwordMatch = await decrypt(password, hashedPassword);       
+            
             if (passwordMatch) {
-                
-                req.session.email = email;
-                req.session.is_logined = true;
+
+                req.session.userId = loginUser.id;
+                req.session.isLogin = true;
 
                 res.status(StatusCodes.OK).json({
-                    message: "로그인 완료",
-                })
-            } else {
-                res.status(StatusCodes.UNAUTHORIZED).json({
-                    message: `이메일 또는 비밀번호가 틀렸습니다.`,
+                    message: "로그인 완료"
                 });
             }
-        } else {
-            res.status(StatusCodes.UNAUTHORIZED).json({
-                message: `이메일 또는 비밀번호가 틀렸습니다.`,
-            });
         }
-    });
-
+        catch (error) {
+            if(error.message == 'Email not found' || "Password not found"){
+                res.status(StatusCodes.UNAUTHORIZED).json({
+                    message: `이메일 또는 비밀번호가 틀렸습니다.`
+                });
+            } else {
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    message: '예기치 않은 오류가 발생했습니다.'
+                });               
+            }
+        }
+    })
 };
 
 const logout = (req, res) => {
     req.session.destroy((err) => {
         res.status(StatusCodes.OK).json({
-            message: "로그아웃 완료",
+            message: "로그아웃 완료"
         })
-        
-    });    
+    });
 };
 
 const resetReq = (req, res) => {
 
-    const { email } = req.body
+    const { email } = req.body;
 
-    let sql = `SELECT * FROM users WHERE email = ?`
+    try {
 
-    conn.query(sql, email,
-        (err, results) => {
-            if (results.length) {
-                sendMail(email)
-                res.status(StatusCodes.OK).json({
-                    message: "이메일로 인증메일을 보내드렸습니다.",
-                })
-            } else {
-                res.status(StatusCodes.UNAUTHORIZED).json({
-                    message: `이메일이 틀렸습니다.`
-                })
+        let sql = `SELECT * FROM users WHERE email = ?`
+
+        conn.query(sql, email,
+            (err, results) => {
+
+                if (results.length) {
+
+                    sendMail(email);
+                    res.status(StatusCodes.OK).json({
+                        message: "이메일로 인증메일을 보내드렸습니다."
+                    })
+
+                } else {
+                    res.status(StatusCodes.UNAUTHORIZED).json({
+                        message: `이메일이 틀렸습니다.`
+                    })
+                }
             }
-        }
-    )
+        );
+
+    } catch (error) {
+
+        console.log(error);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+            message: '예기치 않은 오류가 발생했습니다.'
+        });
+
+    }
 
 }
 
 const reset = async (req, res) => {
 
-    const { email, password } = req.body
+    const { email, password } = req.body;
 
-    const hashedPassword = await encrypt(password);
+    try {
 
-    const sql = `UPDATE users SET password = ? WhERE email = ?`
-    const values = [hashedPassword, email]
+        const hashedPassword = await encrypt(password);
 
-    conn.query(sql, values, (err, results) => {
-        if (err) {
-            return res.status(StatusCodes.BAD_REQUEST).end()
-        }
-        if (results.affectedRows == 0) {
-            return res.status(StatusCodes.BAD_REQUEST).end()
-        } else {
-            res.status(200).json({
-                message: "비밀번호 변경 성공"
-            })
-        }
-    })
+        const sql = `UPDATE users SET password = ? WhERE email = ?`
+        const values = [hashedPassword, email]
+
+        conn.query(sql, values, (err, results) => {
+
+            if (results.affectedRows > 0) {
+
+                res.status(200).json({
+                    message: "비밀번호 초기화 성공"
+                });
+
+            } else {
+
+                return res.status(StatusCodes.BAD_REQUEST).json({
+                    message: '비밀번호 초기화 실패'
+                });
+
+            }
+        });
+
+    } catch (error) {
+
+        console.log(error);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+            message: '예기치 않은 오류가 발생했습니다.'
+        });
+
+    }
+
+
 }
 
 module.exports = {

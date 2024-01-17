@@ -1,19 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const { body, param, validationResult } = require("express-validator")
-const { StatusCodes } = require("http-status-codes")
-const ctrl = require("./controller")
+const { body, validationResult } = require("express-validator");
+const { StatusCodes } = require("http-status-codes");
+const ctrl = require("./controller");
 
 router.use(express.json());
 
 const validate = (req, res, next) => {
-    const err = validationResult(req)
+
+    const err = validationResult(req);
 
     if (err.isEmpty()) {
 
-        return next()
+        return next();
+
     } else {
-        return res.status(StatusCodes.BAD_REQUEST).json(err.array())
+
+        return res.status(StatusCodes.BAD_REQUEST).json(err.array());
+
     }
 }
 
@@ -26,7 +30,7 @@ router.post(
         validate
     ],
     ctrl.join
-)
+);
 
 //로그인
 router.post(
@@ -36,7 +40,8 @@ router.post(
         body("password").notEmpty().isString().withMessage("비밀번호 확인 필요"),
         validate,
     ],
-    ctrl.login);
+    ctrl.login
+);
 
 router.get('/logout', ctrl.logout);
 
@@ -56,4 +61,4 @@ router
         ],
         ctrl.reset);
 
-module.exports = router
+module.exports = router;

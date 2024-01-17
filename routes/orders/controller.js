@@ -1,6 +1,6 @@
 // const conn = require("../../mariadb.js")
 const { StatusCodes } = require("http-status-codes")
-const mariadb = require("mysql2/promise")
+const { connection: conn } = require("../../mariadb.js");
 
 const order = async (req, res) => {
 

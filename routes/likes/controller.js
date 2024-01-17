@@ -1,4 +1,4 @@
-const conn = require("../../mariadb.js")
+const { connection: conn } = require("../../mariadb.js");
 const { StatusCodes } = require("http-status-codes")
 
 const addLike = (req, res) => {
