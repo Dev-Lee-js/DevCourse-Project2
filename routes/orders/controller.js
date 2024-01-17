@@ -91,7 +91,7 @@ const getOrderDetail = async (req, res) => {
 
     if (req.session.isLogin) {
 
-        const { id } = req.params;
+        const orderId = req.params.id;
 
         const conn = await mariadb.createConnection({
             host: '127.0.0.1',
@@ -106,7 +106,7 @@ const getOrderDetail = async (req, res) => {
            ON orderedBook.book_id = books.id
            WHERE order_id = ?`;
 
-        let [rows, fields] = await conn.query(sql, [id]);
+        let [rows, fields] = await conn.query(sql, [orderId]);
         return res.status(StatusCodes.OK).json(rows);
     } else {
         res.status(StatusCodes.UNAUTHORIZED).json({

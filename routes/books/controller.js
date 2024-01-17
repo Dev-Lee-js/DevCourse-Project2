@@ -6,7 +6,7 @@ const allBooks = (req, res) => {
 
     const { category_id, news, limit, currentPage } = req.query;
 
-    const offset = limit * (currentPage-1);
+    const offset = limit * (currentPage - 1);
     let sql = `SELECT * FROM books`;
     let values = []
     if (category_id && news) {
@@ -16,7 +16,7 @@ const allBooks = (req, res) => {
         sql += ` WHERE category_id=?`;
         values = [category_id];
     } else if (news) {
-        sql += ` WHERE pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()`;           
+        sql += ` WHERE pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()`;
     }
 
     sql += ` LIMIT ? OFFSET ?`;
@@ -27,9 +27,9 @@ const allBooks = (req, res) => {
             return res.status(StatusCodes.BAD_REQUEST).end();
         }
         if (results.length) {
-            return res.status(StatusCodes.OK).json(results)
+            return res.status(StatusCodes.OK).json(results);
         } else {
-            return res.status(StatusCodes.NOT_FOUND).end()
+            return res.status(StatusCodes.NOT_FOUND).end();
         }
     });
 };
@@ -37,25 +37,40 @@ const allBooks = (req, res) => {
 const bookDetail = (req, res) => {
 
     const { user_id } = req.session;
-    const  book_id = req.params.id;
-    
-    const sql = `SELECT *,
-                    (SELECT count(*) FROM likes WHERE liked_book_id=books.id) AS likes,
-                    (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? AND liked_book_id = ?)) AS liked
-                    FROM books
-                    LEFT JOIN category
-                    ON books.category_id = category.category_id
-                    WHERE books.id = ?`;
+    const book_id = req.params.id;
 
-    let values = [user_id, book_id, book_id]
+    let sql = ``;
+    let values = [];
+
+    if (user_id) {
+
+        sql = `SELECT *,
+        (SELECT count(*) FROM likes WHERE liked_book_id=books.id) AS likes,
+        (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? AND liked_book_id = ?)) AS liked`;
+
+        values = [user_id, book_id, book_id];
+
+    } else {
+
+        sql = `SELECT *,
+        (SELECT count(*) FROM likes WHERE liked_book_id=books.id) AS likes`;
+
+        values = [book_id];
+    }
+
+    sql += ` FROM books
+             LEFT JOIN category
+             ON books.category_id = category.category_id
+             WHERE books.id = ?`;
+
     conn.query(sql, values, (err, results) => {
         if (err) {
             return res.status(StatusCodes.BAD_REQUEST).end();
         }
         if (results.length) {
-            return res.status(StatusCodes.OK).json(results)
+            return res.status(StatusCodes.OK).json(results);
         } else {
-            return res.status(StatusCodes.NOT_FOUND).end()
+            return res.status(StatusCodes.NOT_FOUND).end();
         }
     });
 
