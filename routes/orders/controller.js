@@ -1,9 +1,8 @@
 // const conn = require("../../mariadb.js")
 const { StatusCodes } = require("http-status-codes")
-const { connection: conn } = require("../../mariadb.js");
+const mariadb = require("mysql2/promise")
 
 const order = async (req, res) => {
-
     if (req.session.isLogin) {
 
         const conn = await mariadb.createConnection({
@@ -54,16 +53,13 @@ const order = async (req, res) => {
 
 const deleteCartItems = async (conn, items) => {
 
-    if (req.session.isLogin) {
-        let sql = `DELETE FROM cartItems WHERE id IN (?)`;
 
-        let result = await conn.query(sql, [items]);
-        return result;
-    } else {
-        res.status(StatusCodes.UNAUTHORIZED).json({
-            message: "세션이 만료되었습니다. 계속하려면 로그인하십시오",
-        });
-    }
+    let sql = `DELETE FROM cartItems WHERE id IN (?)`;
+
+    let result = await conn.query(sql, [items]);
+
+    return result;
+
 }
 
 const getOrders = async (req, res) => {
