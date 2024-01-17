@@ -135,7 +135,7 @@ const login = (req, res) => {
             
             if (passwordMatch) {
 
-                req.session.userId = loginUser.id;
+                req.session.user_id = loginUser.id;
                 req.session.isLogin = true;
 
                 res.status(StatusCodes.OK).json({

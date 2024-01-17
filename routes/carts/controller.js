@@ -3,8 +3,10 @@ const { StatusCodes } = require("http-status-codes")
 
 const addToCart = (req, res) => {
 
-    if (req.session.is_logined) {
-        const { book_id, quantity, user_id } = req.body;
+    if (req.session.isLogin) {
+
+        const { book_id, quantity } = req.body;
+        const { user_id } = req.session;
 
         const sql = `INSERT INTO cartItems (book_id, quantity, user_id) VALUES (?, ?, ?)`;
         const values = [book_id, quantity, user_id];
@@ -26,9 +28,10 @@ const addToCart = (req, res) => {
 
 const getCartItems = (req, res) => {
 
-    if (req.session.is_logined) {
+    if (req.session.isLogin) {
 
-        const { user_id, selected } = req.body;
+        const { selected } = req.body;
+        const { user_id } = req.session;
 
         const sql = `SELECT cartItems.id, book_id, title, summary, quantity, price
                  FROM cartItems LEFT JOIN books 
@@ -51,7 +54,7 @@ const getCartItems = (req, res) => {
 
 const removeCartItem = (req, res) => {
 
-    if (req.session.is_logined) {
+    if (req.session.isLogin) {
 
     const { id } = req.params;
 

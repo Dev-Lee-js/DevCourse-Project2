@@ -4,7 +4,7 @@ const { connection: conn } = require("../../mariadb.js");
 
 const order = async (req, res) => {
 
-    if (req.session.is_logined) {
+    if (req.session.isLogin) {
 
         const conn = await mariadb.createConnection({
             host: '127.0.0.1',
@@ -14,7 +14,8 @@ const order = async (req, res) => {
             dateStrings: true,
         })
 
-        const { items, delivery, totalQuantity, totalPrice, userId, firstBookTitle } = req.body;
+        const { items, delivery, totalQuantity, totalPrice, firstBookTitle } = req.body;
+        const { user_id } = req.session;
 
         let sql = `INSERT INTO delivery (address, receiver, contact) VALUES (?, ?, ?)`
         let values = [delivery.address, delivery.receiver, delivery.contact];
@@ -22,7 +23,7 @@ const order = async (req, res) => {
         let delivery_id = results[0].insertId;
 
         sql = `INSERT INTO orders (book_title, total_quantity, total_price, user_id, delivery_id) VALUES (?,?,?,?,?)`;
-        values = [firstBookTitle, totalQuantity, totalPrice, userId, delivery_id]
+        values = [firstBookTitle, totalQuantity, totalPrice, user_id, delivery_id]
 
         results = await conn.execute(sql, values);
 
@@ -53,7 +54,7 @@ const order = async (req, res) => {
 
 const deleteCartItems = async (conn, items) => {
 
-    if (req.session.is_logined) {
+    if (req.session.isLogin) {
         let sql = `DELETE FROM cartItems WHERE id IN (?)`;
 
         let result = await conn.query(sql, [items]);
@@ -67,7 +68,7 @@ const deleteCartItems = async (conn, items) => {
 
 const getOrders = async (req, res) => {
 
-    if (req.session.is_logined) {
+    if (req.session.isLogin) {
 
         const conn = await mariadb.createConnection({
             host: '127.0.0.1',
@@ -92,7 +93,7 @@ const getOrders = async (req, res) => {
 
 const getOrderDetail = async (req, res) => {
 
-    if (req.session.is_logined) {
+    if (req.session.isLogin) {
 
         const { id } = req.params;
 
