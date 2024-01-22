@@ -1,13 +1,14 @@
 const { connection: conn } = require("../../mariadb.js");
-const { StatusCodes } = require("http-status-codes")
+const { StatusCodes } = require("http-status-codes");
 
 
 const allBooks = (req, res) => {
 
+    let allBooksRes = {};
     const { category_id, news, limit, currentPage } = req.query;
 
     const offset = limit * (currentPage - 1);
-    let sql = `SELECT * FROM books`;
+    let sql = `SELECT SQL_CALC_FOUND_ROWS *, (SELECT count(*) FROM likes WHERE books.id=liked_book_id) AS likes FROM books`;
     let values = []
     if (category_id && news) {
         sql += ` WHERE category_id=? AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()`;
@@ -27,10 +28,32 @@ const allBooks = (req, res) => {
             return res.status(StatusCodes.BAD_REQUEST).end();
         }
         if (results.length) {
-            return res.status(StatusCodes.OK).json(results);
+            results.map((result)=>{
+                result.pubDate = result.pub_date;
+                delete result.pub_date;
+            })
+            allBooksRes.books = results;
         } else {
             return res.status(StatusCodes.NOT_FOUND).end();
         }
+    });
+
+    sql = `SELECT found_rows()`;
+
+    conn.query(sql, (err, results) => {
+        if (err) {
+            return res.status(StatusCodes.BAD_REQUEST).end();
+        }
+
+        
+        const pagination = {};
+        pagination.currentPage = parseInt(currentPage);
+        pagination.totalCount = results[0]["found_rows()"];
+
+        allBooksRes.pagination = pagination;
+
+        return res.status(StatusCodes.OK).json(allBooksRes);
+
     });
 };
 
